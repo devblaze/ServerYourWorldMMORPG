@@ -1,30 +1,56 @@
-﻿public class CommandHandler
+﻿using ServerYourWorldMMORPG.MockClients;
+using ServerYourWorldMMORPG.Models.Utils;
+
+namespace ServerYourWorldMMORPG.Server
 {
-    private readonly ServerCommands _serverCommands;
-
-    public CommandHandler(ServerCommands serverCommands)
+    public class CommandHandler
     {
-        _serverCommands = serverCommands;
-    }
+        private readonly ServerCommands _serverCommands;
+        private IServer server;
 
-    public void ProcessCommand(string input)
-    {
-        string[] commandParts = input.Split(' ');
-        string command = commandParts[0].ToLower();
-        string[] arguments = commandParts.Skip(1).ToArray();
-
-        switch (command)
+        public CommandHandler(IServer server)
         {
-            case "start":
-                _serverCommands.StartServer();
-                break;
-            case "stop":
-                _serverCommands.StopServer();
-                break;
-            // Handle more commands here
-            default:
-                Console.WriteLine("Unknown command.");
-                break;
+            this.server = server;
+            _serverCommands = new ServerCommands();
+        }
+
+        public void ProcessCommand(string? input)
+        {
+            if (input == null) return;
+
+            string[] commandParts = input.Split(' ');
+            string command = commandParts[0].ToLower();
+            string[] arguments = commandParts.Skip(1).ToArray();
+
+            switch (command)
+            {
+                case "start":
+                    this.server.Start();
+                    break;
+                case "stop":
+                    this.server.Stop();
+                    break;
+                case "sendmockpacket":
+                    ProcessSendMockPacket(arguments);
+                    break;
+                // Handle more commands here
+                default:
+                    ConsoleUtility.Print("Unknown command.");
+                    break;
+            }
+        }
+
+        private void ProcessSendMockPacket(string[] arguments)
+        {
+            if (arguments.Length >= 1)
+            {
+                string data = string.Join(" ", arguments);
+                //_serverCommands.SendMockPacket(data);
+            }
+            else
+            {
+                Console.WriteLine("Usage: sendmockpacket <data>");
+            }
         }
     }
 }

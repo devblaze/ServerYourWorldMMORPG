@@ -19,13 +19,4 @@ namespace ServerYourWorldMMORPG.Models
         // Navigation property for the account that owns this character
         public Account Account { get; set; }
     }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Account>()
-        .HasOne(e => e.Account)
-            .WithOne(e => e.Header)
-            .HasForeignKey<Account>(e => e.BlogId)
-            .IsRequired();
-    }
 }
