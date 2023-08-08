@@ -1,34 +1,29 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using ServerYourWorldMMORPG.Database;
-using ServerYourWorldMMORPG.MockClients;
-using ServerYourWorldMMORPG.Models.Utils;
-using ServerYourWorldMMORPG.Server;
-using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
-using System.Text.Json.Nodes;
+using ServerYourWorldMMORPG.GameServer;
+using ServerYourWorldMMORPG.Handlers;
+using Microsoft.Extensions.DependencyInjection;
+using ServerYourWorldMMORPG.Utils;
 
-namespace YourServerNamespace
+namespace ServerYourWorldMMORPG
 {
     class Program
     {
         static void Main(string[] args)
         {
-            var settings = ServerSettings.LoadSettings();
             DatabaseConfirm();
+            var serviceProvider = DependencyInjection.BuildServiceProvider();
 
-            IServer server = new Server(settings);
-            CommandHandler commandHandler = new CommandHandler(server);
+            var networkServer = serviceProvider.GetRequiredService<INetworkServer>();
+            var settings = ServerSettings.LoadSettings();
+            networkServer.Initialize(settings);
 
-            var mockClient = new MockTcpClient();
-            mockClient.StartInNewTerminal();
+            var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
 
-            ConfigureShutdown(server);
-            //server.Start();
             CommandLoop(commandHandler);
         }
 
-        static void ConfigureShutdown(IServer server)
+        static void ConfigureShutdown(INetworkServer server)
         {
             Console.CancelKeyPress += (sender, e) =>
             {
@@ -50,10 +45,28 @@ namespace YourServerNamespace
         {
             while (true)
             {
-                Console.Write("Enter a command: ");
+                //ConsoleUtility.Print("Command:");
                 string? input = Console.ReadLine();
                 commandHandler.ProcessCommand(input); // Process user commands using CommandHandler
             }
         }
     }
 }
+//var serviceProvider = new ServiceCollection()
+//    .AddSingleton<INetworkServer>(new NetworkServer(settings))
+//    .AddSingleton<CommandHandler>()
+//    .BuildServiceProvider();
+
+//var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
+
+//var serviceProvider = DependencyInjection.BuildServiceProvider();
+// Use the method from DependencyInjection
+
+//var commandHandler = serviceProvider.GetRequiredService<CommandHandler>();
+
+//var host = Host.CreateDefaultBuilder()
+//    .ConfigureServices((hostContext, services) =>
+//    {
+//        services.AddSingleton<IGameServer, GameServer>();
+//    }).Build();
+//host.Run();
