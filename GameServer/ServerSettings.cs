@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
-using ServerYourWorldMMORPG.Models.Utils;
+using ServerYourWorldMMORPG.Utils;
 
-namespace ServerYourWorldMMORPG.Server
+namespace ServerYourWorldMMORPG.GameServer
 {
     public class ServerSettings
     {
