@@ -1,38 +1,61 @@
 ﻿using Org.BouncyCastle.Utilities.Net;
-using ServerYourWorldMMORPG.Models.Utils;
+using ServerYourWorldMMORPG.Utils;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using IPAddress = System.Net.IPAddress;
 
-namespace ServerYourWorldMMORPG.Models.Tcp
+namespace ServerYourWorldMMORPG.Models
 {
     public class TCPServer
     {
-        private TcpListener listener;
+        private TcpListener? listener;
+        private Thread? listenThread;
+        private CancellationTokenSource? cancellationTokenSource;
         private Dictionary<string, TcpClient> connectedClients = new Dictionary<string, TcpClient>();
         public string IpString { get; private set; }
         public int Port { get; private set; }
         public int MaxPlayers { get; private set; }
+        public bool isServerRunning { get; private set; }
 
         public TCPServer(string IpString, int port, int maxPlayers)
         {
+            isServerRunning = false;
             this.IpString = IpString;
-            this.Port = port;
-            this.MaxPlayers = maxPlayers;
+            Port = port;
+            MaxPlayers = maxPlayers;
         }
 
-        public void Start()
+        public void StartInBackground()
         {
-            //StartListening();
+            cancellationTokenSource = new CancellationTokenSource();
+            listenThread = new Thread(() => StartListening(cancellationTokenSource.Token));
+            listenThread.Start();
+        }
+
+        public void Stop()
+        {
+            foreach (var client in connectedClients.Values)
+            {
+                client.Close();
+            }
+            cancellationTokenSource?.Cancel();
+            listenThread?.Join();
+            ConsoleUtility.Print("TCP Server has stopped!");
+        }
+
+        public void StartListening(CancellationToken cancellationToken)
+        {
             IPAddress ipAddress = IPAddress.Parse(IpString);
 
             listener = new TcpListener(ipAddress, Port);
             listener.Start();
-            ConsoleUtility.Print("Server started. Waiting for connections...");
+            ConsoleUtility.Print("TCP Server started at port: " + Port);
 
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
+                isServerRunning = true;
                 TcpClient client = listener.AcceptTcpClient();
                 ConsoleUtility.Print("Client connected: " + client.Client.RemoteEndPoint);
 
@@ -42,36 +65,6 @@ namespace ServerYourWorldMMORPG.Models.Tcp
                 ReceiveData(clientId, client);
             }
         }
-
-        public void Stop()
-        {
-            foreach (var client in connectedClients.Values)
-            {
-                client.Close();
-            }
-            listener?.Stop();
-            ConsoleUtility.Print("TCP Server has stopped!");
-        }
-
-        //private void StartListening(IPAddress ipAddress)
-        //{
-        //    IPAddress ipAddress = IPAddress.Parse(IpAddress);
-
-        //    listener = new TcpListener(ipAddress, Port);
-        //    listener.Start();
-        //    ConsoleUtility.Print("Server started. Waiting for connections...");
-
-        //    while (true)
-        //    {
-        //        TcpClient client = listener.AcceptTcpClient();
-        //        ConsoleUtility.Print("Client connected: " + client.Client.RemoteEndPoint);
-
-        //        string clientId = Guid.NewGuid().ToString(); // Generate a unique identifier
-        //        connectedClients[clientId] = client;
-
-        //        ReceiveData(clientId, client);
-        //    }
-        //}
 
         private void ReceiveData(string clientId, TcpClient client)
         {
@@ -108,7 +101,7 @@ namespace ServerYourWorldMMORPG.Models.Tcp
 
         private void SendTcpData(string clientId, string message)
         {
-            if (connectedClients.TryGetValue(clientId, out TcpClient client))
+            if (connectedClients.TryGetValue(clientId, out TcpClient? client))
             {
                 try
                 {

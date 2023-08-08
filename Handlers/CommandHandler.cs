@@ -1,17 +1,19 @@
 ﻿using ServerYourWorldMMORPG.MockClients;
-using ServerYourWorldMMORPG.Models.Utils;
+using ServerYourWorldMMORPG.GameServer;
+using ServerYourWorldMMORPG.GameServer.Commands;
+using ServerYourWorldMMORPG.Utils;
 
-namespace ServerYourWorldMMORPG.Server
+namespace ServerYourWorldMMORPG.Handlers
 {
     public class CommandHandler
     {
-        private readonly ServerCommands _serverCommands;
-        private IServer server;
+        private readonly IServerCommands _serverCommandService;
+        private INetworkServer _server;
 
-        public CommandHandler(IServer server)
+        public CommandHandler(INetworkServer server, IServerCommands serverCommandService)
         {
-            this.server = server;
-            _serverCommands = new ServerCommands();
+            _server = server;
+            _serverCommandService = serverCommandService;
         }
 
         public void ProcessCommand(string? input)
@@ -25,10 +27,10 @@ namespace ServerYourWorldMMORPG.Server
             switch (command)
             {
                 case "start":
-                    this.server.Start();
+                    _serverCommandService.StartServer();
                     break;
                 case "stop":
-                    this.server.Stop();
+                    _serverCommandService.StopServer();
                     break;
                 case "sendmockpacket":
                     ProcessSendMockPacket(arguments);

@@ -2,7 +2,7 @@
 using System.Drawing;
 using Console = Colorful.Console;
 
-namespace ServerYourWorldMMORPG.Models.Utils
+namespace ServerYourWorldMMORPG.Utils
 {
     public static class ConsoleUtility
     {
@@ -18,8 +18,10 @@ namespace ServerYourWorldMMORPG.Models.Utils
             if (priority == 0)
             {
                 Console.WriteLine(formattedMessage);
-            } else { 
-                Console.WriteLine(formattedMessage, PriorityColoredMessage(priority)); 
+            }
+            else
+            {
+                Console.WriteLine(formattedMessage, PriorityColoredMessage(priority));
             }
         }
 
