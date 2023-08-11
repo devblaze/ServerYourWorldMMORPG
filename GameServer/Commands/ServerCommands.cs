@@ -1,11 +1,10 @@
-﻿using System;
+﻿using ServerYourWorldMMORPG.Services.Interfaces;
 using ServerYourWorldMMORPG.Utils;
 
 namespace ServerYourWorldMMORPG.GameServer.Commands
 {
     public class ServerCommands : IServerCommands
     {
-        private bool _isServerRunning = false;
         private INetworkServer _server;
 
         public ServerCommands(INetworkServer server)
@@ -20,9 +19,10 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
                 ConsoleUtility.Print("Server started.");
                 _server.Start();
             }
-
-            ConsoleUtility.Print("Server is already running.");
-            return;
+            else
+            {
+                ConsoleUtility.Print("Server is already running.");
+            }
         }
 
         public void StopServer()
@@ -32,9 +32,10 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
                 ConsoleUtility.Print("Server stopped!");
                 _server.Stop();
             }
-
-            ConsoleUtility.Print("Server is not running.");
-            return;
+            else
+            {
+                ConsoleUtility.Print("Server is not running.");
+            }
         }
     }
 }
