@@ -9,9 +9,9 @@ namespace ServerYourWorldMMORPG.Models
 {
     public class UDPServer
     {
-        private UdpClient udpClient;
-        private Thread? listenThread;
-        private CancellationTokenSource? cancellationTokenSource;
+        private UdpClient _udpClient;
+        private Thread? _listenThread;
+        private CancellationTokenSource? _cancellationTokenSource;
         public int Port { get; private set; }
         public bool isServerRunning { get; private set; }
 
@@ -19,14 +19,14 @@ namespace ServerYourWorldMMORPG.Models
         {
             isServerRunning = false;
             Port = port;
-            udpClient = new UdpClient(Port);
+            _udpClient = new UdpClient(Port);
         }
 
         public void StartInBackground()
         {
-            cancellationTokenSource = new CancellationTokenSource();
-            listenThread = new Thread(() => StartListening(cancellationTokenSource.Token));
-            listenThread.Start();
+            _cancellationTokenSource = new CancellationTokenSource();
+            _listenThread = new Thread(() => StartListening(_cancellationTokenSource.Token));
+            _listenThread.Start();
         }
 
         public void StartListening(CancellationToken cancellationToken)
@@ -41,7 +41,7 @@ namespace ServerYourWorldMMORPG.Models
 
         public void Stop()
         {
-            udpClient?.Close();
+            _udpClient?.Close();
             ConsoleUtility.Print("UDP Server has stopped!");
         }
 
@@ -50,7 +50,7 @@ namespace ServerYourWorldMMORPG.Models
             try
             {
                 byte[] sendData = Encoding.ASCII.GetBytes(message);
-                udpClient.Send(sendData, sendData.Length, remoteEndPoint);
+                _udpClient.Send(sendData, sendData.Length, remoteEndPoint);
                 ConsoleUtility.Print("Sent UDP data to client: " + message);
             }
             catch (Exception ex)
@@ -68,7 +68,7 @@ namespace ServerYourWorldMMORPG.Models
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     isServerRunning = true;
-                    byte[] receivedBytes = udpClient.Receive(ref remoteEndPoint);
+                    byte[] receivedBytes = _udpClient.Receive(ref remoteEndPoint);
                     string data = Encoding.ASCII.GetString(receivedBytes);
                     ConsoleUtility.Print("Received UDP data: " + data);
 

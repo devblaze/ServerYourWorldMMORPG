@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using ServerYourWorldMMORPG.GameServer;
 using ServerYourWorldMMORPG.GameServer.Commands;
-using ServerYourWorldMMORPG.Handlers;
+using ServerYourWorldMMORPG.Services;
+using ServerYourWorldMMORPG.Services.Interfaces;
 
 public static class DependencyInjection
 {
@@ -10,8 +11,10 @@ public static class DependencyInjection
         return new ServiceCollection()
             .AddSingleton<INetworkServer, NetworkServer>()
             .AddSingleton<IServerCommands, ServerCommands>()
-            .AddSingleton<ServerSettings>()
-            .AddSingleton<CommandHandler>()
+            //.AddSingleton<ServerSettings>()
+            .AddSingleton<ICommandService, CommandService>()
+            .AddSingleton<CancellationTokenSource>()
+            //.AddSingleton<CommandService>()
             .BuildServiceProvider();
     }
 }
