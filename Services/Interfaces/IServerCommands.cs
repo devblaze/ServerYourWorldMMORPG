@@ -2,7 +2,12 @@
 {
     public interface IServerCommands
     {
-        void StartServer();
-        void StopServer();
+        Task ExecuteCommand(string command, string[] arguments);
+        void StartServer(string[] arguments);
+        void StopServer(string[] arguments);
+
+        void DisplayConnectedClients();
+
+        void ProcessSendMockPacket(string[] arguments);
     }
 }
