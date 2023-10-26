@@ -1,9 +1,5 @@
-﻿using ServerYourWorldMMORPG.Mocks;
-using ServerYourWorldMMORPG.Models;
+﻿using ServerYourWorldMMORPG.Services.Interfaces;
 using ServerYourWorldMMORPG.Utils;
-using ServerYourWorldMMORPG.Services.Interfaces;
-using System.Threading;
-using System.CommandLine.Parsing;
 
 namespace ServerYourWorldMMORPG.Services
 {
@@ -13,8 +9,8 @@ namespace ServerYourWorldMMORPG.Services
         private INetworkServer _server;
         private CancellationTokenSource _cancellationTokenSource;
 
-        public CommandService(INetworkServer server, 
-            IServerCommands serverCommandService, 
+        public CommandService(INetworkServer server,
+            IServerCommands serverCommandService,
             CancellationTokenSource cancellationTokenSource)
         {
             _cancellationTokenSource = new CancellationTokenSource();
@@ -28,25 +24,7 @@ namespace ServerYourWorldMMORPG.Services
             string command = commandParts[0].ToLower();
             string[] arguments = commandParts.Skip(1).ToArray();
 
-            switch (command)
-            {
-                case "start":
-                    _serverCommandService.StartServer();
-                    break;
-                case "stop":
-                    _serverCommandService.StopServer();
-                    break;
-                case "sendmockpacket":
-                    ProcessSendMockPacket(arguments);
-                    break;
-                case "clients":
-                    DisplayConnectedClients();
-                    break;
-                // Handle more commands here
-                default:
-                    ConsoleUtility.Print("Unknown command.");
-                    break;
-            }
+            await _serverCommandService.ExecuteCommand(command, arguments);
         }
 
         public async Task InitializeAsync()
@@ -62,37 +40,6 @@ namespace ServerYourWorldMMORPG.Services
         public void Stop()
         {
             _cancellationTokenSource.Cancel();
-        }
-
-        private void DisplayConnectedClients()
-        {
-            List<Client> connectedClients = _server.GetConnectedClients();
-
-            if (connectedClients.Count == 0)
-            {
-                ConsoleUtility.Print("No clients connected.");
-            }
-            else
-            {
-                ConsoleUtility.Print("Connected Clients: ");
-                foreach (Client client in connectedClients)
-                {
-                    Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
-                }
-            }
-        }
-
-        private void ProcessSendMockPacket(string[] arguments)
-        {
-            if (arguments.Length >= 1)
-            {
-                string data = string.Join(" ", arguments);
-                //_serverCommands.SendMockPacket(data);
-            }
-            else
-            {
-                ConsoleUtility.Print("Usage: sendmockpacket <data>");
-            }
         }
     }
 }

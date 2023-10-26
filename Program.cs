@@ -10,7 +10,7 @@ namespace ServerYourWorldMMORPG
     {
         static async Task Main(string[] args)
         {
-            DatabaseConfirm();
+            //DatabaseConfirm();
             var serviceProvider = DependencyInjection.BuildServiceProvider();
 
             var networkServer = serviceProvider.GetRequiredService<INetworkServer>();

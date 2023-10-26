@@ -1,10 +1,7 @@
-﻿using Org.BouncyCastle.Utilities.Net;
-using ServerYourWorldMMORPG.Models.Packets;
-using ServerYourWorldMMORPG.Utils;
+﻿using ServerYourWorldMMORPG.Utils;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using IPAddress = System.Net.IPAddress;
 
 namespace ServerYourWorldMMORPG.Models
@@ -37,13 +34,15 @@ namespace ServerYourWorldMMORPG.Models
 
         public void Stop()
         {
-            foreach (var client in _connectedClients.Values)
-            {
-                client.Close();
-            }
+            //foreach (var client in _connectedClients.Values)
+            //{
+            //    client.Close();
+            //}
 
-            _cancellationTokenSource?.Cancel();
-            _listenThread?.Join();
+            //_cancellationTokenSource?.Cancel();
+            //_listenThread?.Join();
+            _listener.Stop();
+            _listenThread.Interrupt();
             ConsoleUtility.Print("TCP Server has stopped!");
         }
 
@@ -68,6 +67,16 @@ namespace ServerYourWorldMMORPG.Models
             }
         }
 
+        public List<Client> GetConnectedTcpClients()
+        {
+            return _connectedClients.Values.Select(client => new Client
+            {
+                Id = client.Client.RemoteEndPoint.ToString(),
+                IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(),
+                Port = ((IPEndPoint)client.Client.RemoteEndPoint).Port
+            }).ToList();
+        }
+
         //public void BroadcastMessage(PacketBase packet)
         //{
         //    foreach (var client in _connectedClients.Values)
@@ -80,7 +89,7 @@ namespace ServerYourWorldMMORPG.Models
         //{
         //    try
         //    {
-                
+
         //    }
         //}
 
@@ -134,16 +143,6 @@ namespace ServerYourWorldMMORPG.Models
                     ConsoleUtility.Print($"TCP Error for client {clientId}: {ex.Message}");
                 }
             }
-        }
-
-        public List<Client> GetConnectedClients()
-        {
-            return _connectedClients.Values.Select(client => new Client
-            {
-                Id = client.Client.RemoteEndPoint.ToString(),
-                IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(),
-                Port = ((IPEndPoint)client.Client.RemoteEndPoint).Port
-            }).ToList();
         }
     }
 }

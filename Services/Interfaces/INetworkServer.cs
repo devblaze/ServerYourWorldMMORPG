@@ -1,14 +1,17 @@
 ﻿using ServerYourWorldMMORPG.Models;
-using ServerYourWorldMMORPG.GameServer;
 
 namespace ServerYourWorldMMORPG.Services.Interfaces
 {
     public interface INetworkServer
     {
-        void Start();
-        void Stop();
-        bool IsServerRunning();
+        void SendMockPacket(string[] data);
+        void StartLoginServer();
+        void StartGameServer();
+        void StopLoginServer();
+        void StopGameServer();
         void Initialize();
+        bool IsLoginServerRunning();
+        bool IsGameServerRunning();
         List<Client> GetConnectedClients();
     }
 }
