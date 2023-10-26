@@ -1,6 +1,4 @@
 ﻿using ServerYourWorldMMORPG.Utils;
-using System.Drawing;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -12,6 +10,7 @@ namespace ServerYourWorldMMORPG.Models
         private UdpClient _udpClient;
         private Thread? _listenThread;
         private CancellationTokenSource? _cancellationTokenSource;
+        private Dictionary<string, IPEndPoint> _connectedClients = new Dictionary<string, IPEndPoint>();
         public int Port { get; private set; }
         public bool isServerRunning { get; private set; }
 
@@ -31,12 +30,31 @@ namespace ServerYourWorldMMORPG.Models
 
         public void StartListening(CancellationToken cancellationToken)
         {
-            // Set up UDP listener
-            //udpClient = new UdpClient(Port);
-            ConsoleUtility.Print("UDP server started at port: " + Port);
+            try
+            {
+                IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-            // Start receiving UDP data
-            ReceiveUdpData(cancellationToken);
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    isServerRunning = true;
+                    byte[] receivedBytes = _udpClient.Receive(ref remoteEndPoint);
+                    string clientId = GenerateUniqueClientId(remoteEndPoint); // Generate a unique identifier
+                    _connectedClients[clientId] = remoteEndPoint;
+
+                    string data = Encoding.ASCII.GetString(receivedBytes);
+                    ConsoleUtility.Print($"Received UDP data from client {clientId}: {data}");
+
+                    // Implement your UDP server logic here...
+
+                    // You can use the client ID to send a response, if needed
+                    SendUdpData(clientId, "Response to client " + clientId);
+                    ReceiveUdpData(cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                ConsoleUtility.Print("UDP Error: " + ex.Message);
+            }
         }
 
         public void Stop()
@@ -45,18 +63,32 @@ namespace ServerYourWorldMMORPG.Models
             ConsoleUtility.Print("UDP Server has stopped!");
         }
 
-        public void SendUdpData(string message, IPEndPoint remoteEndPoint)
+        public void SendUdpData(string clientId, string message)
         {
-            try
+            if (_connectedClients.TryGetValue(clientId, out IPEndPoint remoteEndPoint))
             {
-                byte[] sendData = Encoding.ASCII.GetBytes(message);
-                _udpClient.Send(sendData, sendData.Length, remoteEndPoint);
-                ConsoleUtility.Print("Sent UDP data to client: " + message);
+                try
+                {
+                    byte[] sendData = Encoding.ASCII.GetBytes(message);
+                    _udpClient.Send(sendData, sendData.Length, remoteEndPoint);
+                    ConsoleUtility.Print("Sent UDP data to client " + clientId + ": " + message);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleUtility.Print("UDP Error: " + ex.Message);
+                }
             }
-            catch (Exception ex)
+        }
+
+        public List<Client> GetConnectedUdpClientIds()
+        {
+            //return new List<string>(_connectedClients.Keys);
+            return _connectedClients.Select(client => new Client
             {
-                ConsoleUtility.Print("UDP Error: " + ex.Message);
-            }
+                Id = client.Key,
+                IP = client.Value.Address.ToString(),
+                Port = client.Value.Port
+            }).ToList();
         }
 
         private void ReceiveUdpData(CancellationToken cancellationToken)
@@ -79,6 +111,11 @@ namespace ServerYourWorldMMORPG.Models
             {
                 ConsoleUtility.Print("UDP Error: " + ex.Message);
             }
+        }
+
+        private string GenerateUniqueClientId(IPEndPoint remoteEndPoint)
+        {
+            return $"{remoteEndPoint.Address}:{remoteEndPoint.Port}";
         }
 
         //private void ReceiveUdpDataAsync()
