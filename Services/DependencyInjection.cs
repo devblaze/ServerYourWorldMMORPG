@@ -14,6 +14,7 @@ public static class DependencyInjection
             //.AddSingleton<ServerSettings>()
             .AddSingleton<ICommandService, CommandService>()
             .AddSingleton<CancellationTokenSource>()
+            .AddSingleton<IDummyGameClient, DummyGameClient>()
             //.AddSingleton<CommandService>()
             .BuildServiceProvider();
     }
