@@ -1,24 +1,27 @@
-﻿using ServerYourWorldMMORPG.Utils;
+﻿using ServerYourWorldMMORPG.Models.Network;
+using ServerYourWorldMMORPG.Services.Interfaces;
+using ServerYourWorldMMORPG.Utils;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace ServerYourWorldMMORPG.Models
+namespace ServerYourWorldMMORPG.Services.Network
 {
-    public class UDPServer
+    public class UDPServer : IUDPServer
     {
+        public int ServerPort { get; private set; }
+        public bool IsServerRunning { get; private set; }
+
         private UdpClient _udpClient;
         private Thread? _listenThread;
         private CancellationTokenSource? _cancellationTokenSource;
         private Dictionary<string, IPEndPoint> _connectedClients = new Dictionary<string, IPEndPoint>();
-        public int Port { get; private set; }
-        public bool isServerRunning { get; private set; }
 
         public UDPServer(int port)
         {
-            isServerRunning = false;
-            Port = port;
-            _udpClient = new UdpClient(Port);
+            IsServerRunning = false;
+            ServerPort = port;
+            _udpClient = new UdpClient(ServerPort);
         }
 
         public void StartInBackground()
@@ -36,7 +39,7 @@ namespace ServerYourWorldMMORPG.Models
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    isServerRunning = true;
+                    IsServerRunning = true;
                     byte[] receivedBytes = _udpClient.Receive(ref remoteEndPoint);
                     string clientId = GenerateUniqueClientId(remoteEndPoint); // Generate a unique identifier
                     _connectedClients[clientId] = remoteEndPoint;
@@ -60,6 +63,7 @@ namespace ServerYourWorldMMORPG.Models
         public void Stop()
         {
             _udpClient?.Close();
+            IsServerRunning = false;
             ConsoleUtility.Print("UDP Server has stopped!");
         }
 
@@ -80,15 +84,20 @@ namespace ServerYourWorldMMORPG.Models
             }
         }
 
-        public List<Client> GetConnectedUdpClientIds()
+        public List<UserClient> GetConnectedUdpClientIds()
         {
             //return new List<string>(_connectedClients.Keys);
-            return _connectedClients.Select(client => new Client
+            return _connectedClients.Select(client => new UserClient
             {
                 Id = client.Key,
                 IP = client.Value.Address.ToString(),
                 Port = client.Value.Port
             }).ToList();
+        }
+
+        public bool IsClientIdConnected(string clientId)
+        {
+            return _connectedClients.TryGetValue(clientId, out IPEndPoint remoteEndPoint);
         }
 
         private void ReceiveUdpData(CancellationToken cancellationToken)
@@ -99,7 +108,7 @@ namespace ServerYourWorldMMORPG.Models
 
                 while (!cancellationToken.IsCancellationRequested)
                 {
-                    isServerRunning = true;
+                    IsServerRunning = true;
                     byte[] receivedBytes = _udpClient.Receive(ref remoteEndPoint);
                     string data = Encoding.ASCII.GetString(receivedBytes);
                     ConsoleUtility.Print("Received UDP data: " + data);

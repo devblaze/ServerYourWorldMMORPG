@@ -1,18 +1,19 @@
-﻿using ServerYourWorldMMORPG.Models;
-using ServerYourWorldMMORPG.Models.Constants;
+﻿using ServerYourWorldMMORPG.Models.Constants;
+using ServerYourWorldMMORPG.Models.Network;
 using ServerYourWorldMMORPG.Services.Interfaces;
 using ServerYourWorldMMORPG.Utils;
-using System.Diagnostics;
 
 namespace ServerYourWorldMMORPG.GameServer.Commands
 {
     public class ServerCommands : IServerCommands
     {
-        private INetworkServer _server;
+        private INetworkServer _networkServer;
+        private IDummyGameClient _dummyGameClient;
 
-        public ServerCommands(INetworkServer server)
+        public ServerCommands(INetworkServer networkServer, IDummyGameClient dummyGameClient)
         {
-            _server = server;
+            _networkServer = networkServer;
+            _dummyGameClient = dummyGameClient;
         }
 
         public async Task ExecuteCommand(string command, string[] arguments)
@@ -32,7 +33,11 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
                     DisplayConnectedClients();
                     break;
                 case CommandsWordings.FAKECLIENT:
-                    StartDummyGameClient();
+                    _dummyGameClient.ExecuteCommand(arguments);
+                    break;
+                case CommandsWordings.STATUS:
+                    _networkServer.ServerStatus(arguments);
+                    //ServerStatus(arguments);
                     break;
                 default:
                     ConsoleUtility.Print("Unknown command.");
@@ -66,7 +71,7 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
 
         public void DisplayConnectedClients()
         {
-            List<Client> connectedClients = _server.GetConnectedClients();
+            List<UserClient> connectedClients = _networkServer.GetConnectedClients();
 
             if (connectedClients.Count <= 0)
             {
@@ -75,7 +80,7 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
             else
             {
                 ConsoleUtility.Print("Connected Clients: ");
-                foreach (Client client in connectedClients)
+                foreach (UserClient client in connectedClients)
                 {
                     Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
                 }
@@ -90,42 +95,79 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
                 return;
             }
 
-            _server.SendMockPacket(arguments);
+            _networkServer.SendMockPacket(arguments);
         }
 
-        private void StartDummyGameClient()
+        private void ServerStatus(string[] arguments)
         {
-            // Specify the relative path to your DummyGameClientApp.exe
-            string dummyClientAppPath = @"..\DummyGameClientApp\bin\Debug\DummyGameClientApp.exe";
-
-            try
+            if (arguments.Length > 0)
             {
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    FileName = dummyClientAppPath,
-                    CreateNoWindow = false, // Show the console window
-                };
-
-                using (Process process = new Process { StartInfo = psi })
-                {
-                    process.Start();
-                }
-
-                ConsoleUtility.Print("Started the Dummy Game Client.");
+                SpecificServerStatus(arguments[0]);
+                return;
             }
-            catch (Exception ex)
+
+            SpecificServerStatus(CommandsWordings.LOGINSERVER);
+            SpecificServerStatus(CommandsWordings.GAMESERVER);
+        }
+
+        private void SpecificServerStatus(string server)
+        {
+            bool _IsAlive = false;
+
+            if (server == CommandsWordings.GAMESERVER)
             {
-                ConsoleUtility.Print("Error starting the Dummy Game Client: " + ex.Message);
+                _IsAlive = _networkServer.IsGameServerRunning();
             }
+
+            if (server == CommandsWordings.LOGINSERVER)
+            {
+                _IsAlive = _networkServer.IsLoginServerRunning();
+            }
+
+            ConsoleUtility.Print(server + " server status:");
+            if (_IsAlive)
+            {
+                ConsoleUtility.Print("ONLINE", 1);
+            }
+            else
+            {
+                ConsoleUtility.Print("OFFLINE", 2);
+            }
+        }
+
+        private void FakeClient(string[] arguments)
+        {
+            //// Specify the relative path to your DummyGameClientApp.exe
+            //string dummyClientAppPath = @"..\DummyGameClientApp\bin\Debug\DummyGameClientApp.exe";
+
+            //try
+            //{
+            //    ProcessStartInfo psi = new ProcessStartInfo
+            //    {
+            //        FileName = dummyClientAppPath,
+            //        CreateNoWindow = false, // Show the console window
+            //    };
+
+            //    using (Process process = new Process { StartInfo = psi })
+            //    {
+            //        process.Start();
+            //    }
+
+            //    ConsoleUtility.Print("Started the Dummy Game Client.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    ConsoleUtility.Print("Error starting the Dummy Game Client: " + ex.Message);
+            //}
         }
 
         private void StopSpecificServer(string serverToStart)
         {
             if (serverToStart == CommandsWordings.GAMESERVER)
             {
-                if (_server.IsGameServerRunning())
+                if (_networkServer.IsGameServerRunning())
                 {
-                    _server.StopGameServer();
+                    _networkServer.StopGameServer();
                     ConsoleUtility.Print("Game server has stopped!");
                 }
                 else
@@ -136,9 +178,9 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
 
             if (serverToStart == CommandsWordings.LOGINSERVER)
             {
-                if (_server.IsLoginServerRunning())
+                if (_networkServer.IsLoginServerRunning())
                 {
-                    _server.StopLoginServer();
+                    _networkServer.StopLoginServer();
                     ConsoleUtility.Print("Login server has stopped!");
                 }
                 else
@@ -152,9 +194,9 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
         {
             if (serverToStart == CommandsWordings.GAMESERVER)
             {
-                if (!_server.IsGameServerRunning())
+                if (!_networkServer.IsGameServerRunning())
                 {
-                    _server.StartGameServer();
+                    _networkServer.StartGameServer();
                     ConsoleUtility.Print("Game server started!");
                 }
                 else
@@ -165,9 +207,9 @@ namespace ServerYourWorldMMORPG.GameServer.Commands
 
             if (serverToStart == CommandsWordings.LOGINSERVER)
             {
-                if (!_server.IsLoginServerRunning())
+                if (!_networkServer.IsLoginServerRunning())
                 {
-                    _server.StartLoginServer();
+                    _networkServer.StartLoginServer();
                     ConsoleUtility.Print("Login server started!");
                 }
                 else

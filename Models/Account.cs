@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using ServerYourWorldMMORPG.Models.Game;
 
 namespace ServerYourWorldMMORPG.Models
 {

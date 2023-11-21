@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ServerYourWorldMMORPG.Models;
+using ServerYourWorldMMORPG.Models.Game;
 
 namespace ServerYourWorldMMORPG.Database
 {

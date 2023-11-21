@@ -2,7 +2,6 @@
 {
     public interface ICommandService
     {
-        Task ProcessCommandAsync(string input);
-        Task InitializeAsync();
+        Task Initialize();
     }
 }
