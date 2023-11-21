@@ -8,6 +8,8 @@
         public const string LOGINSERVER = "login";
         public const string CLIENTS = "clients";
         public const string MOCKPACKET = "sendmockpacket";
+        public const string SEND = "send";
         public const string FAKECLIENT = "fakeclient";
+        public const string STATUS = "status";
     }
 }

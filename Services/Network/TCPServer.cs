@@ -1,80 +1,93 @@
-﻿using ServerYourWorldMMORPG.Utils;
+﻿using ServerYourWorldMMORPG.GameServer;
+using ServerYourWorldMMORPG.Models.Network;
+using ServerYourWorldMMORPG.Services.Interfaces;
+using ServerYourWorldMMORPG.Utils;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using IPAddress = System.Net.IPAddress;
 
-namespace ServerYourWorldMMORPG.Models
+namespace ServerYourWorldMMORPG.Services.Network
 {
-    public class TCPServer
+    public class TCPServer : ITCPServer
     {
+        public string ServerIp { get; private set; }
+        public int ServerPort { get; private set; }
+        public int MaxConnectedClients { get; private set; }
+        public bool IsServerRunning { get; private set; }
+        public CancellationTokenSource CancellationTokenSource { get; set; }
+
         private TcpListener? _listener;
         private Thread? _listenThread;
-        private CancellationTokenSource? _cancellationTokenSource;
         private Dictionary<string, TcpClient> _connectedClients = new Dictionary<string, TcpClient>();
-        public string IpString { get; private set; }
-        public int Port { get; private set; }
-        public int MaxPlayers { get; private set; }
-        public bool isServerRunning { get; private set; }
 
         public TCPServer(string IpString, int port, int maxPlayers)
         {
-            this.isServerRunning = false;
-            this.IpString = IpString;
-            this.Port = port;
-            this.MaxPlayers = maxPlayers;
+            ServerSettings.LoadSettings();
+            ServerIp = ServerSettings.IpAddress;
+            ServerPort = ServerSettings.TcpPort;
+            MaxConnectedClients = ServerSettings.MaxPlayers;
+            IsServerRunning = false;
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
-        public void StartInBackground()
+        //public void StartInBackground()
+        //{
+        //    _listenThread = new Thread(() => StartListeningAsync().Wait());
+        //    _listenThread.Start();
+        //}
+
+        public async Task Stop()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            _listenThread = new Thread(() => StartListeningAsync(_cancellationTokenSource.Token).Wait());
-            _listenThread.Start();
+            //Task.Run(() => DisconnectClients(_connectedClients));
+            //Task.Delay(2000);
+
+            //_listener.Stop();
+            //_listenThread.Interrupt();
+            //_listenThread.Abort();
+            //CancellationTokenSource.Cancel();
+            //CancellationTokenSource.Dispose();
+            //IsServerRunning = false;
+            //ConsoleUtility.Print("TCP Server has stopped!");
         }
 
-        public void Stop()
+        public void StartListeningAsync()
         {
-            //foreach (var client in _connectedClients.Values)
-            //{
-            //    client.Close();
-            //}
+            IPAddress ipAddress = IPAddress.Parse(ServerIp);
 
-            //_cancellationTokenSource?.Cancel();
-            //_listenThread?.Join();
-            _listener.Stop();
-            _listenThread.Interrupt();
-            ConsoleUtility.Print("TCP Server has stopped!");
-        }
-
-        public async Task StartListeningAsync(CancellationToken cancellationToken)
-        {
-            IPAddress ipAddress = IPAddress.Parse(IpString);
-
-            _listener = new TcpListener(ipAddress, Port);
+            _listener = new TcpListener(ipAddress, ServerPort);
             _listener.Start();
-            ConsoleUtility.Print("TCP Server started at port: " + Port);
+            ConsoleUtility.Print("TCP Server started at port: " + ServerPort);
 
-            while (!cancellationToken.IsCancellationRequested)
+            while (!CancellationTokenSource.IsCancellationRequested)
             {
-                isServerRunning = true;
-                TcpClient client = await _listener.AcceptTcpClientAsync();
+                //TcpClient client = _listener.AcceptTcpClientAsync();
+                TcpClient client = _listener.AcceptTcpClient();
                 ConsoleUtility.Print("Client connected: " + client.Client.RemoteEndPoint);
 
                 string clientId = Guid.NewGuid().ToString(); // Generate a unique identifier
                 _connectedClients[clientId] = client;
 
-                await ReceiveDataAsync(clientId, client);
+                Task.Run(() => ReceiveDataAsync(clientId, client), CancellationTokenSource.Token);
             }
         }
 
-        public List<Client> GetConnectedTcpClients()
+        public List<UserClient> GetConnectedTcpClients()
         {
-            return _connectedClients.Values.Select(client => new Client
+            return _connectedClients.Values.Select(client => new UserClient
             {
                 Id = client.Client.RemoteEndPoint.ToString(),
                 IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(),
                 Port = ((IPEndPoint)client.Client.RemoteEndPoint).Port
             }).ToList();
+        }
+
+        public async Task DisconnectClients(Dictionary<string, TcpClient> clientsToDisconnect)
+        {
+            foreach (var client in clientsToDisconnect.Values)
+            {
+                client.Close();
+            }
         }
 
         //public void BroadcastMessage(PacketBase packet)
@@ -100,14 +113,16 @@ namespace ServerYourWorldMMORPG.Models
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 NetworkStream stream = client.GetStream();
+                IsServerRunning = true;
 
-                while (true)
+                while (!CancellationTokenSource.IsCancellationRequested)
                 {
-                    bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    //bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                    bytesRead = stream.Read(buffer, 0, buffer.Length);
                     string data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
                     ConsoleUtility.Print($"Received data from client {clientId}: {data}");
 
-                    await ProcessDataAsync(clientId, data);
+                    Task.Run(() => ProcessDataAsync(clientId, data), CancellationTokenSource.Token);
                 }
             }
             catch (Exception ex)
@@ -123,7 +138,7 @@ namespace ServerYourWorldMMORPG.Models
             // ... (your game logic)
 
             // Example: Sending a response to the client
-            await SendTcpDataAsync(clientId, "Hello, client " + clientId);
+            await Task.Run(() => SendTcpDataAsync(clientId, "Hello, client " + clientId));
         }
 
         private async Task SendTcpDataAsync(string clientId, string message)

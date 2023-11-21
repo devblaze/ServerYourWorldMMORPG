@@ -1,5 +1,4 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 using Console = Colorful.Console;
 
 namespace ServerYourWorldMMORPG.Utils
@@ -14,7 +13,7 @@ namespace ServerYourWorldMMORPG.Utils
         public static void Print(string message, int priority = 0)
         {
             string timestamp = GetNowTimestamp();
-            string formattedMessage = $"{timestamp} - {message}";
+            string formattedMessage = $"{timestamp} - {FirstLetterCapital(message)}";
             if (priority == 0)
             {
                 Console.WriteLine(formattedMessage);
@@ -37,11 +36,25 @@ namespace ServerYourWorldMMORPG.Utils
             }
         }
 
+        public static void ClientPrint(string message, int priority = 0)
+        {
+            Console.Write("Client: ");
+            Print(message, priority);
+        }
+
+        private static string FirstLetterCapital(string message)
+        {
+            if (message.Length == 0) return message;
+
+            return char.ToUpper(message[0]).ToString() + message.Substring(1);
+        }
+
         private static Color PriorityColoredMessage(int priority)
         {
-            if (priority == 1) return Color.Red;
-            if (priority == 2) return Color.Yellow;
+            if (priority == 1) return Color.Red; //For some reason this is Blue, don't ask why.
+            if (priority == 2) return Color.Yellow; // Green
             if (priority == 3) return Color.OrangeRed;
+            if (priority == 4) return Color.Green;
 
             return Color.White;
         }
