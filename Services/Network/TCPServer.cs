@@ -1,5 +1,4 @@
-﻿using ServerYourWorldMMORPG.GameServer;
-using ServerYourWorldMMORPG.Models.Network;
+﻿using ServerYourWorldMMORPG.Models.Network;
 using ServerYourWorldMMORPG.Services.Interfaces;
 using ServerYourWorldMMORPG.Utils;
 using System.Net;
@@ -23,10 +22,10 @@ namespace ServerYourWorldMMORPG.Services.Network
 
         public TCPServer(string IpString, int port, int maxPlayers)
         {
-            ServerSettings.LoadSettings();
-            ServerIp = ServerSettings.IpAddress;
-            ServerPort = ServerSettings.TcpPort;
-            MaxConnectedClients = ServerSettings.MaxPlayers;
+            ApplicationSettings.LoadSettings();
+            ServerIp = ApplicationSettings.IpAddress;
+            ServerPort = ApplicationSettings.TcpPort;
+            MaxConnectedClients = ApplicationSettings.MaxPlayers;
             IsServerRunning = false;
             CancellationTokenSource = new CancellationTokenSource();
         }

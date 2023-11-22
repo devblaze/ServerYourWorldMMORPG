@@ -1,5 +1,4 @@
-﻿using ServerYourWorldMMORPG.GameServer;
-using ServerYourWorldMMORPG.Models.Constants;
+﻿using ServerYourWorldMMORPG.Models.Constants;
 using ServerYourWorldMMORPG.Utils;
 using System.Net.Sockets;
 using System.Text;
@@ -13,7 +12,7 @@ public class DummyGameClient : IDummyGameClient
 
     public DummyGameClient()
     {
-        ServerSettings.LoadSettings();
+        ApplicationSettings.LoadSettings();
     }
 
     public async void ExecuteCommand(string[] arguments)
@@ -37,7 +36,7 @@ public class DummyGameClient : IDummyGameClient
 
     public Task Connect()
     {
-        _tcpClient = new TcpClient(ServerSettings.IpAddress, ServerSettings.TcpPort);
+        _tcpClient = new TcpClient(ApplicationSettings.IpAddress, ApplicationSettings.TcpPort);
         //_udpClient = new UdpClient(ServerSettings.UdpPort);
         stream = _tcpClient.GetStream(); // Initialize the 'stream' object
         ConsoleUtility.ClientPrint("Connected to the server.");

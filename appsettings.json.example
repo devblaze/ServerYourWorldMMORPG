@@ -1,0 +1,16 @@
+{
+  "ServerSettings": {
+    "IpAddress": "127.0.0.1",
+    "TcpPort": 8888,
+    "UdpPort": 8888,
+    "MaxPlayers": 100
+  },
+
+  "DatabaseSettings": {
+<<<<<<< main:appsettings.json
+    "ConnectionString": "server=;database=yourworld;user=root;password="
+=======
+    "ConnectionString": "server=SERVERIP;database=DATABASE;user=DATABASEUSER;password=DATABASEPASSWORD"
+>>>>>>> Updated .gitignore and added example of appsetiings.json renames update:appsettings.json.example
+  }
+}
