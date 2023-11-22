@@ -8,6 +8,7 @@ namespace ServerYourWorldMMORPG.Utils
 		public static int TcpPort { get; set; }
 		public static int UdpPort { get; set; }
 		public static int MaxPlayers { get; set; }
+		public static string ConnectionString { get; set; }
 
 		public static void LoadSettings()
 		{
@@ -17,10 +18,11 @@ namespace ServerYourWorldMMORPG.Utils
 				.Build();
 
 			var serverSettings = configuration.GetSection("ServerSettings");
-			var databaseSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>;
+			var databaseSettings = configuration.GetSection("DatabaseSettings");
 
 			//Console.WriteLine($"Current working directory: {Environment.CurrentDirectory}");
 
+			ConnectionString = databaseSettings["ConnectionString"];
 			IpAddress = serverSettings["IpAddress"];
 			TcpPort = int.Parse(serverSettings["TcpPort"]);
 			UdpPort = int.Parse(serverSettings["UdpPort"]);

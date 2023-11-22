@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ServerYourWorldMMORPG.Models.Game.User;
+using ServerYourWorldMMORPG.Utils;
 
 namespace ServerYourWorldMMORPG.Database
 {
@@ -10,7 +11,8 @@ namespace ServerYourWorldMMORPG.Database
 
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
-			optionsBuilder.UseMySQL("server=192.168.4.253;database=yourworld;user=root;password=Blaze23104289");
+			ApplicationSettings.LoadSettings();
+			optionsBuilder.UseMySQL(ApplicationSettings.ConnectionString);
 		}
 	}
 }
