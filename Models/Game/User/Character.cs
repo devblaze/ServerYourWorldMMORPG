@@ -2,10 +2,10 @@
 
 namespace ServerYourWorldMMORPG.Models.Game.User
 {
-	public class Player
+	public class Character
 	{
 		public Guid Id { get; set; }
-		public string Username { get; set; }
+		public string Name { get; set; }
 		public int Level { get; set; }
 		public float Experience { get; set; }
 		public float Health { get; set; }

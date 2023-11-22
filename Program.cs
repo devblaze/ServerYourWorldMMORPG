@@ -13,7 +13,8 @@ namespace ServerYourWorldMMORPG
 			//DatabaseConfirm();
 			var serviceProvider = DependencyInjection.BuildServiceProvider();
 			//var networkServer = serviceProvider.GetRequiredService<INetworkServer>();
-
+			var databaseProvider = serviceProvider.GetRequiredService<ApplicationDbContext>();
+			databaseProvider.Database.Migrate();
 			var commandService = serviceProvider.GetRequiredService<ICommandService>();
 			commandService.Initialize();
 		}
@@ -22,6 +23,7 @@ namespace ServerYourWorldMMORPG
 		{
 			Console.Title = "YourWorld Game Server";
 			ConsoleUtility.Print("Migrating database...");
+
 			using var dbContext = new ApplicationDbContext();
 			dbContext.Database.Migrate();
 			ConsoleUtility.Print("Migrating database finished.");

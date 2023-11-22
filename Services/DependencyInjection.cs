@@ -1,21 +1,33 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using ServerYourWorldMMORPG.Database;
 using ServerYourWorldMMORPG.GameServer;
-using ServerYourWorldMMORPG.GameServer.Commands;
 using ServerYourWorldMMORPG.Services;
+using ServerYourWorldMMORPG.Services.Game;
 using ServerYourWorldMMORPG.Services.Interfaces;
 
 public static class DependencyInjection
 {
-    public static IServiceProvider BuildServiceProvider()
-    {
-        return new ServiceCollection()
-            .AddSingleton<INetworkServer, NetworkServer>()
-            .AddSingleton<IServerCommands, ServerCommands>()
-            //.AddSingleton<ServerSettings>()
-            .AddSingleton<ICommandService, CommandService>()
-            .AddSingleton<CancellationTokenSource>()
-            .AddSingleton<IDummyGameClient, DummyGameClient>()
-            //.AddSingleton<CommandService>()
-            .BuildServiceProvider();
-    }
+	public static IServiceProvider BuildServiceProvider()
+	{
+		var services = new ServiceCollection();
+
+		var configuration = new ConfigurationBuilder();
+
+		//configuration.SetBasePath(Directory.GetCurrentDirectory())
+		//	.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+		//	.Build();
+
+		//var databaseSettings = configuration.GetSection();
+
+		services.AddDbContext<ApplicationDbContext>()
+			.AddSingleton<INetworkServer, NetworkServer>()
+			.AddSingleton<ICommandService, CommandService>()
+			.AddSingleton<CancellationTokenSource>()
+			.AddSingleton<IDummyGameClient, DummyGameClient>()
+			.AddScoped<PlayerService>()
+			.BuildServiceProvider();
+
+		return services.BuildServiceProvider();
+	}
 }
