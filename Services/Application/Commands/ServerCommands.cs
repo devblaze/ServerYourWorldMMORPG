@@ -30,7 +30,7 @@ namespace ServerYourWorldMMORPG.Services.Application.Commands
 					StopServer(arguments);
 					break;
 				case CommandsWordings.MOCKPACKET:
-					ProcessSendMockPacket(arguments);
+					_dummyGameClient.ExecuteCommand(arguments);
 					break;
 				case CommandsWordings.CLIENTS:
 					DisplayConnectedClients();
@@ -94,19 +94,6 @@ namespace ServerYourWorldMMORPG.Services.Application.Commands
 				Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
 			}
 
-		}
-
-		public void ProcessSendMockPacket(string[] arguments)
-		{
-			if (arguments.Length < 2)
-			{
-				ConsoleUtility.Print("Usage: mockpacket <ip:port> <message>");
-				return;
-			}
-
-			ConsoleUtility.Print("Disabled for now!");
-			return;
-			_dummyGameClient.SendMockPacket(arguments);
 		}
 
 		private void SendPacket(string[] arguments)

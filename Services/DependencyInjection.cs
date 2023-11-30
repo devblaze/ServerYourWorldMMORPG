@@ -28,6 +28,7 @@ public static class DependencyInjection
 			.AddDbContext<ApplicationDbContext>(options => options.UseMySQL(databaseSettings.ConnectionString))
 			.AddSingleton<ICommandService, CommandService>()
 			.AddSingleton<IServerCommands, ServerCommands>()
+			.AddScoped<IDummyGameClient, DummyGameClient>()
 			.AddSingleton<CancellationTokenSource>()
 			.AddSingleton<ILoginServerService, LoginServerService>()
 			.AddSingleton<IGameServerService, GameServerService>()

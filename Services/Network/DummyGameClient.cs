@@ -10,11 +10,6 @@ public class DummyGameClient : IDummyGameClient
 	private NetworkStream stream;
 	private bool IsFakeClientOnline = false;
 
-	public DummyGameClient()
-	{
-		ApplicationSettings.LoadSettings();
-	}
-
 	public async void ExecuteCommand(string[] arguments)
 	{
 		switch (arguments[0])
