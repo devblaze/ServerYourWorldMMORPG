@@ -5,11 +5,11 @@ using System.Text.Json;
 
 namespace ServerYourWorldMMORPG.Services.Game
 {
-	public class PlayerService
+	public class CharacterService
 	{
 		private readonly ApplicationDbContext _dbContext;
 
-		public PlayerService(ApplicationDbContext dbContext)
+		public CharacterService(ApplicationDbContext dbContext)
 		{
 			_dbContext = dbContext;
 		}

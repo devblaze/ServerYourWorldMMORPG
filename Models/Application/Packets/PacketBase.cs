@@ -1,6 +1,6 @@
 ﻿using ServerYourWorldMMORPG.Models.Enums;
 
-namespace ServerYourWorldMMORPG.Models.Packets
+namespace ServerYourWorldMMORPG.Models.Application.Packets
 {
     public abstract class PacketBase
     {

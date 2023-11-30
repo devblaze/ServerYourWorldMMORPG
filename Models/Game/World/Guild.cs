@@ -3,13 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ServerYourWorldMMORPG.Models.Game.World
 {
-	public class Teritory
+	public class Guild
 	{
-		public int Id { get; set; }
-		public Guid OwnerId { get; set; }
+		public Guid Id { get; set; }
 		[ForeignKey("OwnerId")]
 		public Character character { get; set; }
 		public string Name { get; set; }
 		public string Description { get; set; }
+		public int Level { get; set; }
 	}
 }

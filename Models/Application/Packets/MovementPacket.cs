@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using ServerYourWorldMMORPG.Models.Enums;
 
-namespace ServerYourWorldMMORPG.Models.Packets
+namespace ServerYourWorldMMORPG.Models.Application.Packets
 {
     public class MovementPacket : PacketBase
     {

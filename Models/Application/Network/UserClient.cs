@@ -1,4 +1,4 @@
-﻿namespace ServerYourWorldMMORPG.Models.Network
+﻿namespace ServerYourWorldMMORPG.Models.Application.Network
 {
     public class UserClient
     {

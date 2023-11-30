@@ -1,4 +1,4 @@
-﻿namespace ServerYourWorldMMORPG.Services.Interfaces
+﻿namespace ServerYourWorldMMORPG.Services.Application.Interfaces
 {
     public interface IServerCommands
     {
