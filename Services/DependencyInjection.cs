@@ -28,11 +28,15 @@ public static class DependencyInjection
 			.AddDbContext<ApplicationDbContext>(options => options.UseMySQL(databaseSettings.ConnectionString))
 			.AddSingleton<ICommandService, CommandService>()
 			.AddSingleton<IServerCommands, ServerCommands>()
-			.AddScoped<IDummyGameClient, DummyGameClient>()
 			.AddSingleton<CancellationTokenSource>()
 			.AddSingleton<ILoginServerService, LoginServerService>()
 			.AddSingleton<IGameServerService, GameServerService>()
+			.AddSingleton<INetworkObjectService, NetworkObjectService>()
+			.AddScoped<IDummyGameClient, DummyGameClient>()
 			.AddScoped<CharacterService>();
+
+		//services.AddTransient(provider => new Lazy<INetworkObjectService>(() => 
+		//provider.GetService<INetworkObjectService>()));
 
 		return services.BuildServiceProvider();
 	}

@@ -98,10 +98,7 @@ namespace ServerYourWorldMMORPG.Services.Application.Commands
 
 		private void SendPacket(string[] arguments)
 		{
-			if (arguments[0] == "all")
-			{
-
-			}
+			_gameServer.SendMessage(arguments[0], arguments[1]);
 		}
 
 		private void ServerStatus(string[] arguments)
@@ -215,7 +212,6 @@ namespace ServerYourWorldMMORPG.Services.Application.Commands
 				if (!_loginServer.ServerStatus())
 				{
 					_loginServer.StartServer();
-					ConsoleUtility.Print("Login server started!");
 				}
 				else
 				{

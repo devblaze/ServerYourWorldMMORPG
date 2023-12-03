@@ -2,10 +2,11 @@
 
 namespace ServerYourWorldMMORPG.Models.Game
 {
+	[Serializable]
 	public class NetworkObject
 	{
-		public string NetworkId { get; set; }
+		public string NetworkObjectId { get; set; }
 		public Vector3 NetworkPosition { get; set; }
-		public Quaternion Rotation { get; set; }
+		public Quaternion NetworkRotation { get; set; }
 	}
 }

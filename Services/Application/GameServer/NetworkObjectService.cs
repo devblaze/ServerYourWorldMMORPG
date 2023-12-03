@@ -1,53 +1,85 @@
-﻿using ServerYourWorldMMORPG.Models.Game;
-using ServerYourWorldMMORPG.Services.Application.Interfaces;
+﻿using Newtonsoft.Json;
+using ServerYourWorldMMORPG.Models.Game;
+using ServerYourWorldMMORPG.Utils;
 using System.Numerics;
-using System.Text.Json;
 
 namespace ServerYourWorldMMORPG.Services.Application.GameServer
 {
-	public class NetworkObjectService
+	public class NetworkObjectService : INetworkObjectService
 	{
-		private IGameServerService _gameServerService;
-		private Dictionary<string, NetworkObject> _networkObjects = new Dictionary<string, NetworkObject>();
+		private List<NetworkObject> _networkObjects = new List<NetworkObject>();
 
-		public NetworkObjectService(IGameServerService gameServerService)
+		public NetworkObject InitializeNetworkObject()
 		{
-			_gameServerService = gameServerService;
+			NetworkObject registeredNetworkObject = RegisterNetworkObject(GenerateUniqueNetworkObjectId());
+			return registeredNetworkObject;
 		}
 
-		public void RegisterNetworkObject(string id, Vector3 position, Quaternion rotation)
+		public string UpdateNetworkObjectWithMessage(string message)
+		{
+			var updatedNetworkObject = DeserializeMessage(message);
+			if (updatedNetworkObject == null) return "";
+			UpdateNetworkObject(updatedNetworkObject);
+
+			return NetworkObjectsListToJsonMessage();
+		}
+
+		public string NetworkObjectsListToJsonMessage()
+		{
+			return JsonConvert.SerializeObject(_networkObjects);
+		}
+
+		public async Task RemoveNetworkObject(NetworkObject networkObject)
+		{
+			// A way to remove the NetworkObject with it's ID
+			// Accepts: string networkObjectIdToRemove
+			//_networkObjects = _networkObjects.Where(networkObject => networkObject.NetworkObjectId != networkObjectIdToRemove).ToList();
+			_networkObjects.Remove(networkObject);
+		}
+
+		private NetworkObject UpdateNetworkObject(NetworkObject networkObjectToUpdate)
+		{
+			var existingNetworkObject = FindNetworkObjectById(networkObjectToUpdate.NetworkObjectId);
+			if (existingNetworkObject == null) return null;
+
+			existingNetworkObject.NetworkPosition = networkObjectToUpdate.NetworkPosition;
+			existingNetworkObject.NetworkRotation = networkObjectToUpdate.NetworkRotation;
+			return existingNetworkObject;
+		}
+
+		private NetworkObject RegisterNetworkObject(string id)
 		{
 			var networkObject = new NetworkObject
 			{
-				NetworkId = id,
-				NetworkPosition = position,
-				Rotation = rotation
+				NetworkObjectId = id,
+				NetworkPosition = new Vector3(-1140, 1, -681),
+				NetworkRotation = new Quaternion(0, 0, 0, 0)
 			};
-			_networkObjects[id] = networkObject;
+			_networkObjects.Add(networkObject);
+			return networkObject;
 		}
 
-		public void UpdateNetworkObject(string id, Vector3 newPosition, Quaternion newRotation)
+		private NetworkObject? DeserializeMessage(string message)
 		{
-			if (_networkObjects.TryGetValue(id, out var networkObject))
+			try
 			{
-				networkObject.NetworkPosition = newPosition;
-				networkObject.Rotation = newRotation;
-				BroadcastNetworkObjectUpdate(networkObject);
+				return JsonConvert.DeserializeObject<NetworkObject>(message);
+			}
+			catch (Exception ex)
+			{
+				ConsoleUtility.Print($"Error with JSON: {ex.Message}");
+				return null;
 			}
 		}
 
-		private void BroadcastNetworkObjectUpdate(NetworkObject networkObject)
+		private string GenerateUniqueNetworkObjectId()
 		{
-			string message = CreateUpdateMessage(networkObject);
-			// Assuming SendUdpData is a method in IGameServerService to send data to all clients
-			//_gameServerService.SendUdpDataToAllClients(message);
+			return Guid.NewGuid().ToString();
 		}
 
-		private string CreateUpdateMessage(NetworkObject networkObject)
+		private NetworkObject FindNetworkObjectById(string id)
 		{
-			// Serialize the NetworkObject to JSON string
-			return JsonSerializer.Serialize(networkObject);
-
+			return _networkObjects.FirstOrDefault(obj => obj.NetworkObjectId == id);
 		}
 	}
 }
