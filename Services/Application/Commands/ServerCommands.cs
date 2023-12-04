@@ -1,5 +1,4 @@
-﻿using ServerYourWorldMMORPG.Models.Application.Network;
-using ServerYourWorldMMORPG.Models.Constants;
+﻿using ServerYourWorldMMORPG.Models.Constants;
 using ServerYourWorldMMORPG.Services.Application.Interfaces;
 using ServerYourWorldMMORPG.Utils;
 
@@ -78,21 +77,22 @@ namespace ServerYourWorldMMORPG.Services.Application.Commands
 			StopSpecificServer(CommandsWordings.GAMESERVER);
 		}
 
-		public void DisplayConnectedClients()
+		public async void DisplayConnectedClients()
 		{
-			List<UserClient> connectedClients = _gameServer.GetConnectedClients();
+			await _gameServer.GetConnectedClients();
+			//List<UserClient> connectedClients = _gameServer.GetConnectedClients();
 
-			if (connectedClients.Count <= 0)
-			{
-				ConsoleUtility.Print("No clients connected.");
-				return;
-			}
+			//if (connectedClients.Count <= 0)
+			//{
+			//	ConsoleUtility.Print("No clients connected.");
+			//	return;
+			//}
 
-			ConsoleUtility.Print("Connected Clients: ");
-			foreach (UserClient client in connectedClients)
-			{
-				Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
-			}
+			//ConsoleUtility.Print("Connected Clients: ");
+			//foreach (UserClient client in connectedClients)
+			//{
+			//	Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
+			//}
 
 		}
 

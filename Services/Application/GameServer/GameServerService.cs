@@ -17,7 +17,7 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 		private TcpListener _tcpListener;
 		private UdpClient _udpListener;
 		private string name;
-		private Dictionary<string, UserSession> _connectedUserSessions = new Dictionary<string, UserSession>();
+		private Dictionary<string, UserSession> _connectedUserSessions;
 		private bool isRunning;
 		private GameServerSettings _gameServerSettings;
 		private LoginServerSettings _loginServerSettings;
@@ -39,6 +39,7 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 			_tcpListener = new TcpListener(IPAddress.Parse(_gameServerSettings.IpAddress), _gameServerSettings.Port);
 			IPEndPoint udpEndPoit = new IPEndPoint(IPAddress.Parse(_gameServerSettings.IpAddress), _gameServerSettings.Port);
 			_udpListener = new UdpClient(udpEndPoit);
+			_connectedUserSessions = new Dictionary<string, UserSession>();
 			StartListeningForUdp();
 		}
 
@@ -78,21 +79,36 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 			ConsoleUtility.Print($"{name} stopped.");
 		}
 
-		public List<UserClient> GetConnectedClients()
+		public async Task GetConnectedClients()
 		{
-			var clients = new List<UserClient>();
-			foreach (var kvp in _connectedUserSessions)
+			if (_connectedUserSessions.Count != 0)
 			{
-				var client = kvp.Value.TcpClient;
-				var userClient = new UserClient
+				foreach (var client in _connectedUserSessions)
 				{
-					Id = kvp.Key,
-					IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(),
-					Port = ((IPEndPoint)client.Client.RemoteEndPoint).Port
-				};
-				clients.Add(userClient);
+					ConsoleUtility.Print($"Connected client: {client.Key} UDP Endpoint: {client.Value.UdpEndPoint}");
+					if (client.Value.PlayerNetworkObject.NetworkObjectId != null)
+					{
+						ConsoleUtility.Print($"Network Object ID: {client.Value.PlayerNetworkObject.NetworkObjectId}");
+					}
+				}
 			}
-			return clients;
+			else
+			{
+				ConsoleUtility.Print("There are no connected clients yet!");
+			}
+			//var clients = new List<UserClient>();
+			//foreach (var kvp in _connectedUserSessions)
+			//{
+			//	var client = kvp.Value.TcpClient;
+			//	var userClient = new UserClient
+			//	{
+			//		Id = kvp.Key,
+			//		IP = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString(),
+			//		Port = ((IPEndPoint)client.Client.RemoteEndPoint).Port
+			//	};
+			//	clients.Add(userClient);
+			//}
+			//return clients;
 		}
 
 		public async Task SendMessage(string clientId, string message, ProtocolType protocol = ProtocolType.Udp)
@@ -102,18 +118,12 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 				var client = GetTcpClientFromId(clientId);
 				if (client == null || !client.Connected) return;
 
-				try
+				NetworkStream stream = client.GetStream();
+				if (stream.CanWrite)
 				{
-					NetworkStream stream = client.GetStream();
-					if (stream.CanWrite)
-					{
-						byte[] buffer = Encoding.UTF8.GetBytes(message);
-						await stream.WriteAsync(buffer, 0, buffer.Length);
-					}
-				}
-				catch (Exception ex)
-				{
-					ConsoleUtility.Print($"Error sending TCP message to client: {ex.Message}");
+					byte[] buffer = Encoding.UTF8.GetBytes(message);
+					await stream.WriteAsync(buffer, 0, buffer.Length);
+					ConsoleUtility.Print($"{protocol}/TCP message: {message}");
 				}
 			}
 			else if (protocol == ProtocolType.Udp)
@@ -121,7 +131,8 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 				if (_connectedUserSessions.TryGetValue(clientId, out var userSession))
 				{
 					byte[] data = Encoding.UTF8.GetBytes(message);
-					_udpListener.Send(data, data.Length, userSession.UdpEndPoint);
+					await _udpListener.SendAsync(data, data.Length, userSession.UdpEndPoint);
+					ConsoleUtility.Print($"{protocol}/UDP message: {message}");
 				}
 				else
 				{
@@ -130,10 +141,11 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 			}
 		}
 
-		public async Task BroadcastMessage(string message)
+		public async Task BroadcastMessage(string message, string exceptUser = null)
 		{
 			foreach (var client in _connectedUserSessions)
 			{
+				if (exceptUser == client.Key) continue;
 				await SendMessage(client.Key, message);
 			}
 		}
@@ -145,34 +157,45 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 
 		private void OnUdpDataReceived(IAsyncResult result)
 		{
+			IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
+			byte[] data = new byte[0];
 			try
 			{
-				IPEndPoint clientEndPoint = new IPEndPoint(IPAddress.Any, 0);
-				byte[] data = _udpListener.EndReceive(result, ref clientEndPoint);
-
-				// Process the received data
-				string message = Encoding.UTF8.GetString(data);
-				ConsoleUtility.Print($"Received UDP message from {clientEndPoint}: {message}");
-
-				var clientEntry = _connectedUserSessions.FirstOrDefault(entry => entry.Value.UdpEndPoint.Equals(clientEndPoint));
-				if (clientEntry.Value != null)
-				{
-					string cliendId = clientEntry.Key;
-					ProcessServerMessage(cliendId, message);
-				}
-
-				_udpListener.BeginReceive(OnUdpDataReceived, null);
+				data = _udpListener.EndReceive(result, ref clientEndPoint);
 			}
 			catch (Exception ex)
 			{
-				ConsoleUtility.Print($"UDP receive error: {ex.Message}");
+				ConsoleUtility.Print($"Host disconected: {ex}");
+				//_connectedUserSessions.TryGetValue(clientEndPoint, out UserSession value);
+				//RemovePlayer();
 			}
+
+			// Process the received data
+			string message = Encoding.UTF8.GetString(data);
+			ConsoleUtility.Print($"Received UDP message from {clientEndPoint}: {message}");
+
+			if (message == "RequestSessionId")
+			{
+				ClientRequsestedSessionId(clientEndPoint);
+			}
+
+			var clientEntry = _connectedUserSessions.FirstOrDefault(entry => entry.Value.UdpEndPoint.Equals(clientEndPoint));
+
+			if (clientEntry.Key != null && message != "RequestSessionId")
+			{
+				string sessionId = clientEntry.Key;
+				ProcessServerMessage(sessionId, message);
+			}
+
+			_udpListener.BeginReceive(OnUdpDataReceived, null);
 		}
 
 		private TcpClient? GetTcpClientFromId(string clientId)
 		{
-			if (_connectedUserSessions.TryGetValue(clientId, out UserSession userSession))
+			if (_connectedUserSessions.TryGetValue(clientId, out UserSession? userSession))
 			{
+				if (userSession == null) return null;
+
 				return userSession.TcpClient;
 			}
 
@@ -181,11 +204,8 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 
 		private async Task OnClientConnect(TcpClient client)
 		{
-			string clientId = GenerateClientId();
-			UserSession userSession = new UserSession { TcpClient = client };
-			_connectedUserSessions.Add(clientId, userSession);
-			await SendMessage(clientId, $"SessionId|{clientId}");
-			ConsoleUtility.Print($"Client connected: {clientId} and has been informed of the session ID");
+			string sessionId = GenerateClientId();
+			await ProvideSessionIdToClient(sessionId, true, client);
 
 			NetworkStream stream = client.GetStream();
 
@@ -199,33 +219,21 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 					{
 						string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 						//ConsoleUtility.Print($"Message: {message} From: {clientId}");
-						ProcessServerMessage(clientId, message);
+						ProcessServerMessage(sessionId, message);
 					}
 				}
 			}
 			catch (Exception ex)
 			{
-				ConsoleUtility.Print($"Error with client {clientId}: {ex}");
+				ConsoleUtility.Print($"Error with client {sessionId}: {ex}");
 			}
 			finally
 			{
-				CleanUpClientResources(clientId, stream);
+				CleanUpClientResources(sessionId, stream);
 			}
 		}
 
-		private void CleanUpClientResources(string clientId, NetworkStream stream)
-		{
-			if (_connectedUserSessions.TryGetValue(clientId, value: out var userSessionToRemove))
-			{
-				_networkObjectService.RemoveNetworkObject(userSessionToRemove.PlayerNetworkObject);
-			}
-			stream.Close();
-			userSessionToRemove.TcpClient.Close();
-			_connectedUserSessions.Remove(clientId);
-			ConsoleUtility.Print($"Client {clientId} has disconnected!");
-		}
-
-		private void ProcessServerMessage(string clientId, string message)
+		private void ProcessServerMessage(string sessionId, string message)
 		{
 			string[] splitMessage = message.Split('|');
 			string command = splitMessage[0];
@@ -234,7 +242,7 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 			switch (command)
 			{
 				case "UpdatePosition":
-					UpdatePosition(clientId, data);
+					UpdatePosition(data);
 					break;
 				case "NewPlayer":
 					string newPlayerId = splitMessage[1];
@@ -245,14 +253,17 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 				case "PlayerConnected":
 					PlayerSpawnRequest(data);
 					break;
+				case "PlayerDisconnected":
+					RemovePlayer(sessionId);
+					break;
 				default:
 					string data2 = splitMessage[1];
-					ConsoleUtility.Print($"Unknown packet received: {data2} From: {clientId}");
+					ConsoleUtility.Print($"Unknown packet received: {data2} From: {sessionId}");
 					break;
 			}
 		}
 
-		private async Task UpdatePosition(string clientId, string message)
+		private async Task UpdatePosition(string message)
 		{
 			string updatePositions = _networkObjectService.UpdateNetworkObjectWithMessage(message);
 			await BroadcastMessage($"UpdatePosition|{updatePositions}");
@@ -273,14 +284,73 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 			}
 		}
 
+		private async void RemovePlayer(string sessionId)
+		{
+			_connectedUserSessions.TryGetValue(sessionId, value: out var userSession);
+
+			string message = $"ClientDisconnect|{userSession.PlayerNetworkObject.NetworkObjectId}";
+			await BroadcastMessage(message, sessionId);
+
+			_networkObjectService.RemoveNetworkObject(userSession.PlayerNetworkObject);
+			_connectedUserSessions.Remove(sessionId);
+		}
+
+		private void CleanUpClientResources(string sessionId, NetworkStream stream)
+		{
+			if (_connectedUserSessions.TryGetValue(sessionId, value: out UserSession? userSessionToRemove))
+			{
+				_networkObjectService.RemoveNetworkObject(userSessionToRemove.PlayerNetworkObject);
+			}
+
+			if (userSessionToRemove == null) return;
+
+			stream.Close();
+			userSessionToRemove.TcpClient.Close();
+			_connectedUserSessions.Remove(sessionId);
+			ConsoleUtility.Print($"Client {sessionId} has disconnected!");
+		}
+
 		private string GenerateClientId()
 		{
 			string clientId = Guid.NewGuid().ToString();
-			if (_connectedUserSessions.TryGetValue(clientId, out UserSession? userSession))
+			if (_connectedUserSessions.TryGetValue(clientId, out UserSession? existsingUserSession))
 			{
 				clientId = Guid.NewGuid().ToString();
 			}
+
 			return clientId;
+		}
+
+		private async Task ProvideSessionIdToClient(string sessionId, bool isTcp = false, TcpClient? client = null, IPEndPoint? clientEndPoint = null)
+		{
+			if (client == null && clientEndPoint == null)
+			{
+				ConsoleUtility.Print("You need to put TcpClient or clientEndPoit to provide Session ID!");
+				return;
+			}
+
+			UserSession userSession;
+			ProtocolType protocol;
+			if (isTcp && client != null)
+			{
+				userSession = new UserSession { TcpClient = client };
+				protocol = ProtocolType.Tcp;
+			}
+			else
+			{
+				userSession = new UserSession { UdpEndPoint = clientEndPoint };
+				protocol = ProtocolType.Udp;
+			}
+
+			_connectedUserSessions.Add(sessionId, userSession);
+			await SendMessage(sessionId, $"SessionId|{sessionId}", protocol);
+			ConsoleUtility.Print($"Client connected: {sessionId} and has been informed of the session ID");
+		}
+
+		private async Task ClientRequsestedSessionId(IPEndPoint clientEndPoint)
+		{
+			string sessionId = GenerateClientId();
+			await ProvideSessionIdToClient(sessionId, false, null, clientEndPoint);
 		}
 
 		private async Task RegisterWithLoginServer()

@@ -1,5 +1,4 @@
-﻿using ServerYourWorldMMORPG.Models.Application.Network;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 
 namespace ServerYourWorldMMORPG.Services.Application.Interfaces
 {
@@ -8,8 +7,8 @@ namespace ServerYourWorldMMORPG.Services.Application.Interfaces
 		bool ServerStatus();
 		Task StartServer();
 		Task StopServer();
-		List<UserClient> GetConnectedClients();
+		Task GetConnectedClients();
 		Task SendMessage(string clientId, string message, ProtocolType protocol = ProtocolType.Udp);
-		Task BroadcastMessage(string message);
+		Task BroadcastMessage(string message, string exceptUser = null);
 	}
 }
