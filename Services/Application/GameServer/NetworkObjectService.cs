@@ -31,7 +31,7 @@ namespace ServerYourWorldMMORPG.Services.Application.GameServer
 
 		public async Task RemoveNetworkObject(NetworkObject networkObject)
 		{
-			// A way to remove the NetworkObject with it's ID
+			// How to remove the NetworkObject with it's ID
 			// Accepts: string networkObjectIdToRemove
 			//_networkObjects = _networkObjects.Where(networkObject => networkObject.NetworkObjectId != networkObjectIdToRemove).ToList();
 			_networkObjects.Remove(networkObject);

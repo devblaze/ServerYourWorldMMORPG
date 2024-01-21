@@ -14,6 +14,8 @@ public static class DependencyInjection
 {
 	public static IServiceProvider BuildServiceProvider()
 	{
+		//var builder = WebApplication.CreateBuilder(args);
+		//var settings = new Settings();
 		var services = new ServiceCollection();
 
 		var configuration = new ConfigurationBuilder()
