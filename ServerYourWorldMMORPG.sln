@@ -9,7 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharedLibrary", "..\SharedL
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LoginServer", "..\LoginServer\LoginServer.csproj", "{D1E49EDB-E582-4F0A-8588-D0F13C70571A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityServer", "..\UnityServer\UnityServer.csproj", "{6F33C0A7-5B19-4BAB-AB56-2C268B2F0A8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnityServer", "..\UnityServer\UnityServer.csproj", "{6F33C0A7-5B19-4BAB-AB56-2C268B2F0A8C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{153B2173-6387-4921-B6A9-185ED15834A6}"
+	ProjectSection(SolutionItems) = preProject
+		.drone.yml = .drone.yml
+		Dockerfile = Dockerfile
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

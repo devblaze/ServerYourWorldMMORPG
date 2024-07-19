@@ -40,4 +40,4 @@ trigger:
   branch:
     include:
       - master
-      - staging
+      - develop
