@@ -12,34 +12,48 @@ using ServerYourWorldMMORPG.Services.Game;
 
 public static class DependencyInjection
 {
-	public static IServiceProvider BuildServiceProvider()
-	{
-		//var builder = WebApplication.CreateBuilder(args);
-		//var settings = new Settings();
-		var services = new ServiceCollection();
+    public static IServiceProvider BuildServiceProvider()
+    {
+        var services = new ServiceCollection();
+        var basePath = AppDomain.CurrentDomain.BaseDirectory;
 
-		var configuration = new ConfigurationBuilder()
-			.SetBasePath("C:\\Users\\nikos\\Documents\\Visual Studio Projects\\ServerYourWorldMMORPG")
-			.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-			.Build();
+        try
+        {
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(basePath)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
 
-		var databaseSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>();
+            var databaseSettings = configuration.GetSection("DatabaseSettings").Get<DatabaseSettings>();
 
-		services.Configure<LoginServerSettings>(configuration.GetSection("LoginServerSettings"))
-			.Configure<GameServerSettings>(configuration.GetSection("GameServerSettings"))
-			.AddDbContext<ApplicationDbContext>(options => options.UseMySQL(databaseSettings.ConnectionString))
-			.AddSingleton<ICommandService, CommandService>()
-			.AddSingleton<IServerCommands, ServerCommands>()
-			.AddSingleton<CancellationTokenSource>()
-			.AddSingleton<ILoginServerService, LoginServerService>()
-			.AddSingleton<IGameServerService, GameServerService>()
-			.AddSingleton<INetworkObjectService, NetworkObjectService>()
-			.AddScoped<IDummyGameClient, DummyGameClient>()
-			.AddScoped<CharacterService>();
+            services.Configure<LoginServerSettings>(configuration.GetSection("LoginServerSettings"))
+                .Configure<GameServerSettings>(configuration.GetSection("GameServerSettings"))
+                .AddDbContext<ApplicationDbContext>(options => options.UseMySQL(databaseSettings.ConnectionString))
+                .AddSingleton<ICommandService, CommandService>()
+                .AddSingleton<IServerCommands, ServerCommands>()
+                .AddSingleton<CancellationTokenSource>()
+                .AddSingleton<ILoginServerService, LoginServerService>()
+                .AddSingleton<IGameServerService, GameServerService>()
+                .AddSingleton<INetworkObjectService, NetworkObjectService>()
+                .AddScoped<IDummyGameClient, DummyGameClient>()
+                .AddScoped<CharacterService>();
 
-		//services.AddTransient(provider => new Lazy<INetworkObjectService>(() => 
-		//provider.GetService<INetworkObjectService>()));
-
-		return services.BuildServiceProvider();
-	}
+            return services.BuildServiceProvider();
+        }
+        catch (DirectoryNotFoundException dirEx)
+        {
+            Console.WriteLine($"Directory not found: {dirEx.Message}");
+            throw;
+        }
+        catch (FileNotFoundException fileEx)
+        {
+            Console.WriteLine($"File not found: {fileEx.Message}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+            throw;
+        }
+    }
 }

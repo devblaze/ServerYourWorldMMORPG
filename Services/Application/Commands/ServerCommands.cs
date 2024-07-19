@@ -1,223 +1,242 @@
 ﻿using ServerYourWorldMMORPG.Models.Constants;
 using ServerYourWorldMMORPG.Services.Application.Interfaces;
 using ServerYourWorldMMORPG.Utils;
+using System.Reflection;
 
 namespace ServerYourWorldMMORPG.Services.Application.Commands
 {
-	public class ServerCommands : IServerCommands
-	{
-		private IGameServerService _gameServer;
-		private ILoginServerService _loginServer;
-		private IDummyGameClient _dummyGameClient;
+    public class ServerCommands : IServerCommands
+    {
+        private IGameServerService _gameServer;
+        private ILoginServerService _loginServer;
+        private IDummyGameClient _dummyGameClient;
 
-		public ServerCommands(IGameServerService gameServer, ILoginServerService loginServer, IDummyGameClient dummyGameClient)
-		{
-			_gameServer = gameServer;
-			_loginServer = loginServer;
-			_dummyGameClient = dummyGameClient;
+        public ServerCommands(IGameServerService gameServer, ILoginServerService loginServer, IDummyGameClient dummyGameClient)
+        {
+            _gameServer = gameServer;
+            _loginServer = loginServer;
+            _dummyGameClient = dummyGameClient;
 
-		}
+        }
 
-		public async Task ExecuteCommand(string command, string[] arguments)
-		{
-			switch (command)
-			{
-				case CommandsWordings.START:
-					StartServer(arguments);
-					break;
-				case CommandsWordings.STOP:
-					StopServer(arguments);
-					break;
-				case CommandsWordings.MOCKPACKET:
-					_dummyGameClient.ExecuteCommand(arguments);
-					break;
-				case CommandsWordings.CLIENTS:
-					DisplayConnectedClients();
-					break;
-				case CommandsWordings.FAKECLIENT:
-					//_dummyGameClient.ExecuteCommand(arguments);
-					ConsoleUtility.Print("Disabled for now!");
-					break;
-				case CommandsWordings.STATUS:
-					ServerStatus(arguments);
-					break;
-				case CommandsWordings.LISTSERVERS:
-					_loginServer.PrintAvailableGameServers();
-					break;
-				case CommandsWordings.SEND:
-					SendPacket(arguments);
-					break;
-				default:
-					ConsoleUtility.Print("Unknown command.");
-					break;
-			}
-		}
+        public async Task ExecuteCommand(string command, string[] arguments)
+        {
+            switch (command)
+            {
+                case CommandsWordings.START:
+                    StartServer(arguments);
+                    break;
+                case CommandsWordings.STOP:
+                    StopServer(arguments);
+                    break;
+                case CommandsWordings.MOCKPACKET:
+                    _dummyGameClient.ExecuteCommand(arguments);
+                    break;
+                case CommandsWordings.CLIENTS:
+                    DisplayConnectedClients();
+                    break;
+                case CommandsWordings.FAKECLIENT:
+                    //_dummyGameClient.ExecuteCommand(arguments);
+                    ConsoleUtility.Print("Disabled for now!");
+                    break;
+                case CommandsWordings.STATUS:
+                    ServerStatus(arguments);
+                    break;
+                case CommandsWordings.LISTSERVERS:
+                    _loginServer.PrintAvailableGameServers();
+                    break;
+                case CommandsWordings.SEND:
+                    SendPacket(arguments);
+                    break;
+                case CommandsWordings.HELP:
+                    ListAvailableCommands();
+                    break;
+                default:
+                    ConsoleUtility.Print("Unknown command.");
+                    break;
+            }
+        }
 
-		public void StartServer(string[] arguments)
-		{
-			if (arguments.Length > 0)
-			{
-				StartSpecificServer(arguments[0]);
-				return;
-			}
+        public void StartServer(string[] arguments)
+        {
+            if (arguments.Length > 0)
+            {
+                StartSpecificServer(arguments[0]);
+                return;
+            }
 
-			StartSpecificServer(CommandsWordings.LOGINSERVER);
-			StartSpecificServer(CommandsWordings.GAMESERVER);
-		}
+            StartSpecificServer(CommandsWordings.LOGINSERVER);
+            StartSpecificServer(CommandsWordings.GAMESERVER);
+        }
 
-		public void StopServer(string[] arguments)
-		{
-			if (arguments.Length > 0)
-			{
-				StopSpecificServer(arguments[0]);
-				return;
-			}
+        public void StopServer(string[] arguments)
+        {
+            if (arguments.Length > 0)
+            {
+                StopSpecificServer(arguments[0]);
+                return;
+            }
 
-			StopSpecificServer(CommandsWordings.LOGINSERVER);
-			StopSpecificServer(CommandsWordings.GAMESERVER);
-		}
+            StopSpecificServer(CommandsWordings.LOGINSERVER);
+            StopSpecificServer(CommandsWordings.GAMESERVER);
+        }
 
-		public async void DisplayConnectedClients()
-		{
-			await _gameServer.GetConnectedClients();
-			//List<UserClient> connectedClients = _gameServer.GetConnectedClients();
+        public async void DisplayConnectedClients()
+        {
+            await _gameServer.GetConnectedClients();
+            //List<UserClient> connectedClients = _gameServer.GetConnectedClients();
 
-			//if (connectedClients.Count <= 0)
-			//{
-			//	ConsoleUtility.Print("No clients connected.");
-			//	return;
-			//}
+            //if (connectedClients.Count <= 0)
+            //{
+            //	ConsoleUtility.Print("No clients connected.");
+            //	return;
+            //}
 
-			//ConsoleUtility.Print("Connected Clients: ");
-			//foreach (UserClient client in connectedClients)
-			//{
-			//	Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
-			//}
+            //ConsoleUtility.Print("Connected Clients: ");
+            //foreach (UserClient client in connectedClients)
+            //{
+            //	Console.WriteLine($"Client ID: {client.Id} | Client IP: {client.IP} | Port: {client.Port}");
+            //}
 
-		}
+        }
 
-		private void SendPacket(string[] arguments)
-		{
-			_gameServer.SendMessage(arguments[0], arguments[1]);
-		}
+        private void ListAvailableCommands()
+        {
+            var commandFields = typeof(CommandsWordings)
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(fi => fi.IsLiteral && !fi.IsInitOnly)
+                .Select(fi => fi.GetValue(null).ToString())
+                .ToList();
 
-		private void ServerStatus(string[] arguments)
-		{
-			if (arguments.Length > 0)
-			{
-				SpecificServerStatus(arguments[0]);
-				return;
-			}
+            ConsoleUtility.Print("Available Commands:");
+            foreach (var command in commandFields)
+            {
+                ConsoleUtility.Print(command);
+            }
+        }
 
-			SpecificServerStatus(CommandsWordings.LOGINSERVER);
-			SpecificServerStatus(CommandsWordings.GAMESERVER);
-		}
+        private void SendPacket(string[] arguments)
+        {
+            _gameServer.SendMessage(arguments[0], arguments[1]);
+        }
 
-		private void SpecificServerStatus(string server)
-		{
-			bool _IsAlive = false;
+        private void ServerStatus(string[] arguments)
+        {
+            if (arguments.Length > 0)
+            {
+                SpecificServerStatus(arguments[0]);
+                return;
+            }
 
-			if (server == CommandsWordings.GAMESERVER)
-			{
-				_IsAlive = _gameServer.ServerStatus();
-			}
+            SpecificServerStatus(CommandsWordings.LOGINSERVER);
+            SpecificServerStatus(CommandsWordings.GAMESERVER);
+        }
 
-			if (server == CommandsWordings.LOGINSERVER)
-			{
-				_IsAlive = _loginServer.ServerStatus();
-			}
+        private void SpecificServerStatus(string server)
+        {
+            bool _IsAlive = false;
 
-			ConsoleUtility.Print(server + " server status:");
-			if (_IsAlive)
-			{
-				ConsoleUtility.Print("ONLINE", 1);
-			}
-			else
-			{
-				ConsoleUtility.Print("OFFLINE", 2);
-			}
-		}
+            if (server == CommandsWordings.GAMESERVER)
+            {
+                _IsAlive = _gameServer.ServerStatus();
+            }
 
-		private void FakeClient(string[] arguments)
-		{
-			//// Specify the relative path to your DummyGameClientApp.exe
-			//string dummyClientAppPath = @"..\DummyGameClientApp\bin\Debug\DummyGameClientApp.exe";
+            if (server == CommandsWordings.LOGINSERVER)
+            {
+                _IsAlive = _loginServer.ServerStatus();
+            }
 
-			//try
-			//{
-			//    ProcessStartInfo psi = new ProcessStartInfo
-			//    {
-			//        FileName = dummyClientAppPath,
-			//        CreateNoWindow = false, // Show the console window
-			//    };
+            ConsoleUtility.Print(server + " server status:");
+            if (_IsAlive)
+            {
+                ConsoleUtility.Print("ONLINE", 1);
+            }
+            else
+            {
+                ConsoleUtility.Print("OFFLINE", 2);
+            }
+        }
 
-			//    using (Process process = new Process { StartInfo = psi })
-			//    {
-			//        process.Start();
-			//    }
+        private void FakeClient(string[] arguments)
+        {
+            //// Specify the relative path to your DummyGameClientApp.exe
+            //string dummyClientAppPath = @"..\DummyGameClientApp\bin\Debug\DummyGameClientApp.exe";
 
-			//    ConsoleUtility.Print("Started the Dummy Game Client.");
-			//}
-			//catch (Exception ex)
-			//{
-			//    ConsoleUtility.Print("Error starting the Dummy Game Client: " + ex.Message);
-			//}
-		}
+            //try
+            //{
+            //    ProcessStartInfo psi = new ProcessStartInfo
+            //    {
+            //        FileName = dummyClientAppPath,
+            //        CreateNoWindow = false, // Show the console window
+            //    };
 
-		private void StopSpecificServer(string serverToStart)
-		{
-			if (serverToStart == CommandsWordings.GAMESERVER)
-			{
-				if (_gameServer.ServerStatus())
-				{
-					_gameServer.StopServer();
-					ConsoleUtility.Print("Game server has stopped!");
-				}
-				else
-				{
-					ConsoleUtility.Print("Game server is not running.");
-				}
-			}
+            //    using (Process process = new Process { StartInfo = psi })
+            //    {
+            //        process.Start();
+            //    }
 
-			if (serverToStart == CommandsWordings.LOGINSERVER)
-			{
-				if (_loginServer.ServerStatus())
-				{
-					_loginServer.StopServer();
-					ConsoleUtility.Print("Login server has stopped!");
-				}
-				else
-				{
-					ConsoleUtility.Print("Login server is not running.");
-				}
-			}
-		}
+            //    ConsoleUtility.Print("Started the Dummy Game Client.");
+            //}
+            //catch (Exception ex)
+            //{
+            //    ConsoleUtility.Print("Error starting the Dummy Game Client: " + ex.Message);
+            //}
+        }
 
-		private void StartSpecificServer(string serverToStart)
-		{
-			if (serverToStart == CommandsWordings.GAMESERVER)
-			{
-				if (!_gameServer.ServerStatus())
-				{
-					_gameServer.StartServer();
-				}
-				else
-				{
-					ConsoleUtility.Print("Game server is already running!");
-				}
-			}
+        private void StopSpecificServer(string serverToStart)
+        {
+            if (serverToStart == CommandsWordings.GAMESERVER)
+            {
+                if (_gameServer.ServerStatus())
+                {
+                    _gameServer.StopServer();
+                    ConsoleUtility.Print("Game server has stopped!");
+                }
+                else
+                {
+                    ConsoleUtility.Print("Game server is not running.");
+                }
+            }
 
-			if (serverToStart == CommandsWordings.LOGINSERVER)
-			{
-				if (!_loginServer.ServerStatus())
-				{
-					_loginServer.StartServer();
-				}
-				else
-				{
-					ConsoleUtility.Print("Login server is already running!");
-				}
-			}
-		}
-	}
+            if (serverToStart == CommandsWordings.LOGINSERVER)
+            {
+                if (_loginServer.ServerStatus())
+                {
+                    _loginServer.StopServer();
+                    ConsoleUtility.Print("Login server has stopped!");
+                }
+                else
+                {
+                    ConsoleUtility.Print("Login server is not running.");
+                }
+            }
+        }
+
+        private void StartSpecificServer(string serverToStart)
+        {
+            if (serverToStart == CommandsWordings.GAMESERVER)
+            {
+                if (!_gameServer.ServerStatus())
+                {
+                    _gameServer.StartServer();
+                }
+                else
+                {
+                    ConsoleUtility.Print("Game server is already running!");
+                }
+            }
+
+            if (serverToStart == CommandsWordings.LOGINSERVER)
+            {
+                if (!_loginServer.ServerStatus())
+                {
+                    _loginServer.StartServer();
+                }
+                else
+                {
+                    ConsoleUtility.Print("Login server is already running!");
+                }
+            }
+        }
+    }
 }
