@@ -1,0 +1,43 @@
+kind: pipeline
+type: docker
+name: default
+
+steps:
+- name: restore
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  commands:
+    - dotnet restore
+
+- name: build
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  commands:
+    - dotnet build --no-restore -c Release
+
+- name: test
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  commands:
+    - dotnet test --no-restore -c Release
+
+- name: publish
+  image: mcr.microsoft.com/dotnet/sdk:8.0
+  commands:
+    - dotnet publish --no-restore -c Release -o out
+
+- name: dockerize
+  image: plugins/docker
+  settings:
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+    repo: myusername/serveryourworldmmorpg
+    tags:
+      - latest
+      - ${DRONE_COMMIT_SHA}
+    dockerfile: Dockerfile
+
+trigger:
+  branch:
+    include:
+      - master
+      - staging
